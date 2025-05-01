@@ -1,0 +1,2093 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Static Site CMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Internal CSS Styles -->
+    <style>
+        body { padding: 20px; }
+        .nav-tabs { margin-bottom: 20px; }
+        .language-section { margin-bottom: 30px; }
+        .page-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+        .template-editor, .code-editor { height: 300px; font-family: monospace; font-size: 14px; }
+        .form-label { font-weight: bold; }
+        .preview-frame { width: 100%; height: 600px; border: 1px solid #ddd; }
+        #jsonEditor { height: 400px; font-family: monospace; }
+        .language-folder { cursor: pointer; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px; }
+        .language-folder:hover { background-color: #f5f5f5; }
+        .language-pages { display: none; padding-left: 20px; }
+        .language-folder.active { background-color: #e9ecef; }
+        .page-item { cursor: pointer; padding: 8px; border: 1px solid #eee; margin-top: 5px; border-radius: 3px; }
+        .page-item:hover { background-color: #f0f0f0; }
+        .page-item.active { background-color: #d1e7dd; }
+        .content-editor-container { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        .save-btn { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .file-upload-container { padding: 20px; border: 1px dashed #ddd; text-align: center; margin-bottom: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="container-fluid">
+        <h1 class="mb-4">Interactive Static Site CMS</h1>
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">Content Manager</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="template-tab" data-bs-toggle="tab" data-bs-target="#template" type="button" role="tab">Template Editor</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="assets-tab" data-bs-toggle="tab" data-bs-target="#assets" type="button" role="tab">Root Files & Assets</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json" type="button" role="tab">JSON Editor</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview" type="button" role="tab">Preview</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">Generate</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="shortcode-tab" data-bs-toggle="tab" data-bs-target="#shortcode" type="button" role="tab">Make Shortcode</button>
+            </li>
+        </ul>
+        <!-- Tab Content -->
+        <div class="tab-content" id="mainTabsContent">
+            <!-- Content Manager Tab -->
+            <div class="tab-pane fade show active" id="content" role="tabpanel" aria-labelledby="content-tab">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <button id="addLanguage" class="btn btn-outline-primary">Add Language</button>
+                        <button id="addPage" class="btn btn-outline-success ms-2">Add Page to All Languages</button>
+                        <button id="saveProject" class="btn btn-primary ms-2">
+                            <i class="fas fa-save"></i> Save Project
+                        </button>
+                        <button id="importProject" class="btn btn-secondary ms-2">
+                            <i class="fas fa-file-import"></i> Import Project
+                        </button>
+                        <button id="clearData" class="btn btn-outline-danger ms-2">
+                            <i class="fas fa-trash"></i> Clear Data Cookies
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div id="languageTree"></div>
+                    </div>
+                    <div class="col-md-9">
+                        <div id="pageContentEditor" class="content-editor-container">
+                            <div class="text-center text-muted p-5">
+                                <i class="fas fa-file-alt fa-3x mb-3"></i>
+                                <h4>Select a page to edit its content</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="projectFileInput" style="display: none;" accept=".json">
+            </div>
+            <!-- Template Editor Tab -->
+            <div class="tab-pane fade" id="template" role="tabpanel" aria-labelledby="template-tab">
+                <div class="mb-3">
+                    <label for="templateEditor" class="form-label">HTML Template</label>
+                    <textarea id="templateEditor" class="form-control template-editor"><!DOCTYPE html>
+<html lang="{lang}">
+<head>
+    <meta charset="UTF-8">
+    <title>{title}</title>
+    <meta name="description" content="{description}">
+    <meta name="keywords" content="{keywords}">
+    <link rel="canonical" href="{canonical}">
+    <meta property="og:title" content="{title}">
+    <meta property="og:description" content="{description}">
+    <meta property="og:url" content="{canonical}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{siteName}">
+    <meta property="og:image" content="{ogImage}">
+    <meta property="og:image:width" content="{ogImageWidth}">
+    <meta property="og:image:height" content="{ogImageHeight}">
+    <meta property="og:image:type" content="{ogImageType}">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "{title}",
+      "description": "{description}",
+      "url": "{canonical}"
+    }
+    </script>
+    {hreflangTags}
+    {headContent}
+    <link rel="stylesheet" href="/css/style.css">
+    {pageStyle}
+    <script src="/js/global.js" defer></script>
+</head>
+<body>
+    {header}
+    <h1>{title}</h1>
+    <p>{description}</p>
+    {content}
+    {footer}
+</body>
+</html></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="globalCssEditor" class="form-label">Global CSS (style.css)</label>
+                            <textarea id="globalCssEditor" class="form-control code-editor">/* Global CSS styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+}
+h1 {
+    color: #2c3e50;
+}
+a {
+    color: #3498db;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}</textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="globalJsEditor" class="form-label">Global JavaScript (global.js)</label>
+                            <textarea id="globalJsEditor" class="form-control code-editor">// Global JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Website loaded successfully!');
+    const links = document.querySelectorAll('a');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            console.log('Link clicked:', this.href);
+        });
+    });
+});</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <h4>Language-specific Headers & Footers</h4>
+                        <nav>
+                            <div class="nav nav-tabs" id="headerFooterTabs" role="tablist"></div>
+                        </nav>
+                        <div class="tab-content p-3 border border-top-0" id="headerFooterContent"></div>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <strong>Available placeholders:</strong>
+                    <ul>
+                        <li><code>{lang}</code> - Language code</li>
+                        <li><code>{title}</code> - Page title</li>
+                        <li><code>{description}</code> - Page description</li>
+                        <li><code>{keywords}</code> - Page keywords</li>
+                        <li><code>{content}</code> - Page content</li>
+                        <li><code>{canonical}</code> - Canonical URL</li>
+                        <li><code>{hreflangTags}</code> - Hreflang tags</li>
+                        <li><code>{pageStyle}</code> - Page-specific CSS</li>
+                        <li><code>{siteName}</code> - Site name</li>
+                        <li><code>{headContent}</code> - Custom head content</li>
+                        <li><code>{ogImage}</code> - OG image URL</li>
+                        <li><code>{ogImageWidth}</code> - OG image width</li>
+                        <li><code>{ogImageHeight}</code> - OG image height</li>
+                        <li><code>{ogImageType}</code> - OG image type</li>
+                        <li><code>{header}</code> - Language-specific header</li>
+                        <li><code>{footer}</code> - Language-specific footer</li>
+                    </ul>
+                </div>
+            </div>
+            <!-- Root Files & Assets Tab -->
+            <div class="tab-pane fade" id="assets" role="tabpanel" aria-labelledby="assets-tab">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h3>Root Files & Assets</h3>
+                        <p>Add additional files that will be included in your generated static site.</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="file-upload-container">
+                            <i class="fas fa-upload fa-2x mb-2"></i>
+                            <h5>Upload Files</h5>
+                            <p>Drag and drop files here or click to browse</p>
+                            <input type="file" id="assetFileInput" multiple style="display: none;" accept=".json">
+                            <button id="browseFilesBtn" class="btn btn-outline-primary">Browse Files</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="generateRobotsTxt" checked>
+                            <label class="form-check-label" for="generateRobotsTxt">Generate robots.txt file</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="robotsTxtEditor" class="form-label">robots.txt Content</label>
+                            <textarea id="robotsTxtEditor" class="form-control" rows="5">User-agent: *
+Allow: /
+Sitemap: https://example.com/sitemap.xml</textarea>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="generateSitemapXml" checked>
+                            <label class="form-check-label" for="generateSitemapXml">Generate sitemap.xml file</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Site Logo (for OG Image fallback)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="logoFileInput" accept="image/*">
+                                    <button class="btn btn-outline-primary" id="uploadLogoBtn">Upload Logo</button>
+                                </div>
+                                <div id="logoPreview" class="mt-3" style="display: none;">
+                                    <img src="" class="img-thumbnail" style="max-height: 100px;">
+                                    <p class="mt-2">This logo will be used as fallback for OG image if a page doesn't have its own image.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Added Files</h4>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Filename</th>
+                                    <th>Path</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetFilesList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- JSON Editor Tab -->
+            <div class="tab-pane fade" id="json" role="tabpanel" aria-labelledby="json-tab">
+                <div class="mb-3">
+                    <label for="jsonEditor" class="form-label">JSON Data</label>
+                    <textarea id="jsonEditor" class="form-control"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <button id="updateFromJSON" class="btn btn-primary">Update Content from JSON</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Preview Tab -->
+            <div class="tab-pane fade" id="preview" role="tabpanel" aria-labelledby="preview-tab">
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="previewLanguage" class="form-label">Language:</label>
+                            <select id="previewLanguage" class="form-select"></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="previewPage" class="form-label">Page:</label>
+                            <select id="previewPage" class="form-select"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <button id="generatePreview" class="btn btn-primary mt-4">Generate Preview</button>
+                        </div>
+                    </div>
+                </div>
+                <iframe id="previewFrame" class="preview-frame"></iframe>
+            </div>
+            <!-- Generate Tab -->
+            <div class="tab-pane fade" id="generate" role="tabpanel" aria-labelledby="generate-tab">
+                <div class="mb-3">
+                    <label for="domainInput" class="form-label">Domain URL</label>
+                    <input type="text" id="domainInput" class="form-control" value="https://example.com" placeholder="https://yourdomain.com">
+                </div>
+                <button id="generateFiles" class="btn btn-lg btn-success">Generate Static Site Files</button>
+                <a id="downloadZip" class="btn btn-lg btn-primary" style="display:none;" download="static_site_files.zip">Download Zip File</a>
+                <div id="generationStatus" class="alert alert-info mt-3" style="display:none;"></div>
+            </div>
+            <!-- Shortcode Tab -->
+            <div class="tab-pane fade" id="shortcode" role="tabpanel" aria-labelledby="shortcode-tab">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="shortcodeName" class="form-label">Shortcode Name</label>
+                            <input type="text" class="form-control" id="shortcodeName" placeholder="code_name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="shortcodeContent" class="form-label">Shortcode Content</label>
+                            <textarea class="form-control" id="shortcodeContent" rows="5" placeholder="<p>Your HTML content here</p>"></textarea>
+                        </div>
+                        <button id="addShortcode" class="btn btn-primary">Add Shortcode</button>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Available Shortcodes</h4>
+                        <div id="shortcodesList" class="list-group"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Add Language Modal -->
+    <div class="modal fade" id="addLanguageModal" tabindex="-1" aria-labelledby="addLanguageModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addLanguageModalLabel">Add New Language</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newLanguageCode" class="form-label">Language Code</label>
+                        <input type="text" class="form-control" id="newLanguageCode" placeholder="e.g. fr, es, de">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmAddLanguage">Add Language</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Add Page Modal -->
+    <div class="modal fade" id="addPageModal" tabindex="-1" aria-labelledby="addPageModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPageModalLabel">Add New Page</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newPageId" class="form-label">Page ID</label>
+                        <input type="text" class="form-control" id="newPageId" placeholder="e.g. contact, services, products">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmAddPage">Add Page</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- External Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Internal JavaScript Logic -->
+    <script>
+        const mimeToExt = {
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/gif': 'gif',
+            'image/webp': 'webp'
+        };
+        let siteData = {
+            "en": {
+                "pages": {
+                    "index": {
+                        "title": "Welcome",
+                        "description": "This is the homepage in English.",
+                        "keywords": "homepage, welcome, english",
+                        "content": "<p>Welcome to the English homepage. Enjoy your visit!</p>",
+                        "custom_css": ""
+                    },
+                    "about": {
+                        "title": "About Us",
+                        "description": "Learn more about our project.",
+                        "keywords": "about, project, info",
+                        "content": "<p>We are dedicated to providing the best experience for our users.</p>",
+                        "custom_css": ""
+                    },
+                    "contact": {
+                        "title": "Contact Us",
+                        "description": "Reach out to us anytime.",
+                        "keywords": "contact, email, support",
+                        "content": "<p>Email us at <a href='mailto:support@example.com'>support@example.com</a>.</p>",
+                        "custom_css": ""
+                    }
+                },
+                "header": "",
+                "footer": ""
+            },
+            "es": {
+                "pages": {
+                    "index": {
+                        "title": "Bienvenido",
+                        "description": "Esta es la página de inicio en español.",
+                        "keywords": "página de inicio, bienvenido, español",
+                        "content": "<p>Bienvenido a la página de inicio en español. ¡Disfruta tu visita!</p>",
+                        "custom_css": ""
+                    },
+                    "about": {
+                        "title": "Sobre Nosotros",
+                        "description": "Conozca más sobre nuestro proyecto.",
+                        "keywords": "sobre, proyecto, información",
+                        "content": "<p>Estamos dedicados a proporcionar la mejor experiencia para nuestros usuarios.</p>",
+                        "custom_css": ""
+                    },
+                    "contact": {
+                        "title": "Contáctenos",
+                        "description": "Póngase en contacto con nosotros en cualquier momento.",
+                        "keywords": "contacto, correo electrónico, soporte",
+                        "content": "<p>Envíenos un correo a <a href='mailto:soporte@example.com'>soporte@example.com</a>.</p>",
+                        "custom_css": ""
+                    }
+                },
+                "header": "",
+                "footer": ""
+            }
+        };
+        let assetFiles = [];
+        let shortcodes = {};
+        let currentLanguage = null;
+        let currentPage = null;
+
+        function saveToLocalStorage() {
+            localStorage.setItem('siteData', JSON.stringify(siteData));
+            localStorage.setItem('templateData', $("#templateEditor").val());
+            localStorage.setItem('globalCssData', $("#globalCssEditor").val());
+            localStorage.setItem('globalJsData', $("#globalJsEditor").val());
+            localStorage.setItem('domainData', $("#domainInput").val());
+            localStorage.setItem('robotsData', $("#robotsTxtEditor").val());
+            localStorage.setItem('assetFiles', JSON.stringify(assetFiles));
+            localStorage.setItem('shortcodes', JSON.stringify(shortcodes));
+        }
+
+        function loadFromLocalStorage() {
+            const savedSiteData = localStorage.getItem('siteData');
+            const savedTemplateData = localStorage.getItem('templateData');
+            const savedGlobalCssData = localStorage.getItem('globalCssData');
+            const savedGlobalJsData = localStorage.getItem('globalJsData');
+            const savedDomainData = localStorage.getItem('domainData');
+            const savedRobotsData = localStorage.getItem('robotsData');
+            const savedAssetFiles = localStorage.getItem('assetFiles');
+            const savedShortcodes = localStorage.getItem('shortcodes');
+
+            if (savedSiteData) {
+                siteData = JSON.parse(savedSiteData);
+                renderLanguageTree();
+                updatePreviewSelectors();
+                updateJSONEditor();
+            }
+            if (savedTemplateData) $("#templateEditor").val(savedTemplateData);
+            if (savedGlobalCssData) $("#globalCssEditor").val(savedGlobalCssData);
+            if (savedGlobalJsData) $("#globalJsEditor").val(savedGlobalJsData);
+            if (savedDomainData) $("#domainInput").val(savedDomainData);
+            if (savedRobotsData) $("#robotsTxtEditor").val(savedRobotsData);
+            if (savedAssetFiles) {
+                assetFiles = JSON.parse(savedAssetFiles);
+                const logoAsset = assetFiles.find(f => f.path === 'logo.png');
+                if (logoAsset) {
+                    $("#logoPreview img").attr('src', logoAsset.data);
+                    $("#logoPreview").show();
+                }
+                updateAssetFilesList();
+            }
+            if (savedShortcodes) {
+                shortcodes = JSON.parse(savedShortcodes);
+                updateShortcodesList();
+            }
+        }
+
+        $(document).ready(function() {
+            loadFromLocalStorage();
+            updateJSONEditor();
+            renderLanguageTree();
+            updateHeaderFooterTabs();
+            updatePreviewSelectors();
+
+            $("#addLanguage").click(function() {
+                $('#addLanguageModal').modal('show');
+            });
+
+            $("#confirmAddLanguage").click(function() {
+                const langCode = $("#newLanguageCode").val().trim();
+                if (langCode) {
+                    addNewLanguage(langCode);
+                    $('#addLanguageModal').modal('hide');
+                    $("#newLanguageCode").val('');
+                }
+            });
+
+            $("#addPage").click(function() {
+                $('#addPageModal').modal('show');
+            });
+
+            $("#confirmAddPage").click(function() {
+                const pageId = $("#newPageId").val().trim();
+                if (pageId) {
+                    addNewPage(pageId);
+                    $('#addPageModal').modal('hide');
+                    $("#newPageId").val('');
+                }
+            });
+
+            $("#updateFromJSON").click(function() {
+                try {
+                    siteData = JSON.parse($("#jsonEditor").val());
+                    renderLanguageTree();
+                    updatePreviewSelectors();
+                    updateJSONEditor();
+                    updateHeaderFooterTabs();
+                    alert("Content updated successfully from JSON!");
+                    saveToLocalStorage();
+                } catch (e) {
+                    alert("Error parsing JSON: " + e.message);
+                }
+            });
+
+            $("#generatePreview").click(function() {
+                generatePreview();
+            });
+
+            $("#generateFiles").click(function() {
+                generateStaticSite();
+            });
+
+            $("#saveProject").click(function() {
+                saveProject();
+            });
+
+            $("#importProject").click(function() {
+                $("#projectFileInput").click();
+            });
+
+            $("#projectFileInput").change(function(e) {
+                importProject(e);
+            });
+
+            $("#browseFilesBtn").click(function() {
+                $("#assetFileInput").click();
+            });
+
+            $("#assetFileInput").change(function(e) {
+                handleFileUpload(e);
+            });
+
+            $(".file-upload-container").on('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('bg-light');
+            });
+
+            $(".file-upload-container").on('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('bg-light');
+            });
+
+            $(".file-upload-container").on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('bg-light');
+                const files = e.originalEvent.dataTransfer.files;
+                handleAssetFiles(files);
+            });
+
+            $("#clearData").click(function() {
+                if (confirm("क्या आप वाकई सभी स्थानीय डेटा मिटाना चाहते हैं?")) {
+                    localStorage.clear();
+                    alert("सभी कुकीज़ डेटा मिटा दिया गया है!");
+                }
+            });
+
+            $("#uploadLogoBtn").click(function() {
+                $("#logoFileInput").click();
+            });
+
+            $("#logoFileInput").change(function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const existingIndex = assetFiles.findIndex(f => f.path === 'logo.png');
+                        const logoData = {
+                            name: 'logo.png',
+                            path: 'logo.png',
+                            size: file.size,
+                            type: file.type,
+                            data: e.target.result,
+                            width: this.width,
+                            height: this.height
+                        };
+                        if (existingIndex >= 0) {
+                            assetFiles[existingIndex] = logoData;
+                        } else {
+                            assetFiles.push(logoData);
+                        }
+                        $("#logoPreview img").attr('src', e.target.result);
+                        $("#logoPreview").show();
+                        updateAssetFilesList();
+                        saveToLocalStorage();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            $("#addShortcode").click(function() {
+                const name = $("#shortcodeName").val().trim();
+                const content = $("#shortcodeContent").val();
+                if (name && content) {
+                    shortcodes[name] = content;
+                    updateShortcodesList();
+                    saveToLocalStorage();
+                    $("#shortcodeName").val('');
+                    $("#shortcodeContent").val('');
+                    alert(`Shortcode <${name}> added successfully!`);
+                } else {
+                    alert("Please enter both shortcode name and content.");
+                }
+            });
+        });
+
+        function renderLanguageTree() {
+            const container = $("#languageTree");
+            container.empty();
+            Object.keys(siteData).forEach(lang => {
+                const langFolder = $(`
+                    <div class="language-folder" data-lang="${lang}">
+                        <i class="fas fa-folder me-2"></i> ${lang}
+                        <div class="float-end">
+                            <button class="btn btn-sm btn-outline-danger remove-language">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="language-pages" data-lang="${lang}">
+                    </div>
+                `);
+                const pagesContainer = langFolder.filter(".language-pages");
+                Object.keys(siteData[lang].pages).forEach(pageId => {
+                    const pageItem = $(`
+                        <div class="page-item" data-lang="${lang}" data-page="${pageId}">
+                            <i class="fas fa-file-alt me-2"></i> ${pageId}
+                            <div class="float-end">
+                                <button class="btn btn-sm btn-outline-primary edit-page-id me-1">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger remove-page">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                    pagesContainer.append(pageItem);
+                });
+                container.append(langFolder);
+            });
+
+            $(".language-folder").click(function(e) {
+                if ($(e.target).hasClass('remove-language') || $(e.target).parent().hasClass('remove-language')) return;
+                const lang = $(this).data('lang');
+                $(this).toggleClass('active');
+                $(`.language-pages[data-lang="${lang}"]`).slideToggle();
+            });
+
+            $(".remove-language").click(function(e) {
+                e.stopPropagation();
+                const lang = $(this).closest('.language-folder').data('lang');
+                if (confirm(`Are you sure you want to remove the ${lang} language?`)) {
+                    delete siteData[lang];
+                    renderLanguageTree();
+                    updatePreviewSelectors();
+                    updateJSONEditor();
+                    updateHeaderFooterTabs();
+                    if (currentLanguage === lang) clearPageEditor();
+                    saveToLocalStorage();
+                }
+            });
+
+            $(".page-item").click(function() {
+                $(".page-item").removeClass('active');
+                $(this).addClass('active');
+                const lang = $(this).data('lang');
+                const pageId = $(this).data('page');
+                currentLanguage = lang;
+                currentPage = pageId;
+                renderPageEditor(lang, pageId);
+            });
+
+            $(".remove-page").click(function(e) {
+                e.stopPropagation();
+                const lang = $(this).closest('.page-item').data('lang');
+                const pageId = $(this).closest('.page-item').data('page');
+                if (confirm(`क्या आप वाकई ${pageId} पेज को हटाना चाहते हैं?`)) {
+                    delete siteData[lang].pages[pageId];
+                    renderLanguageTree();
+                    updatePreviewSelectors();
+                    updateJSONEditor();
+                    updateHeaderFooterTabs();
+                    if (currentLanguage === lang && currentPage === pageId) clearPageEditor();
+                    saveToLocalStorage();
+                }
+            });
+
+            $(".edit-page-id").click(function(e) {
+                e.stopPropagation();
+                const lang = $(this).closest('.page-item').data('lang');
+                const pageId = $(this).closest('.page-item').data('page');
+                const newPageId = prompt("Enter new page ID:", pageId);
+                if (newPageId && newPageId !== pageId) {
+                    if (siteData[lang].pages[newPageId]) {
+                        alert(`Page ID "${newPageId}" already exists in this language.`);
+                        return;
+                    }
+                    siteData[lang].pages[newPageId] = { ...siteData[lang].pages[pageId] };
+                    delete siteData[lang].pages[pageId];
+                    renderLanguageTree();
+                    updatePreviewSelectors();
+                    updateJSONEditor();
+                    if ($("#previewPage").val() === pageId) $("#previewPage").val(newPageId);
+                    if (currentLanguage === lang && currentPage === pageId) {
+                        currentPage = newPageId;
+                        renderPageEditor(lang, newPageId);
+                    }
+                    saveToLocalStorage();
+                    alert(`Page ID successfully changed from "${pageId}" to "${newPageId}".`);
+                }
+            });
+        }
+
+        function renderPageEditor(lang, pageId) {
+            const pageData = siteData[lang].pages[pageId];
+            const editorContainer = $("#pageContentEditor");
+            editorContainer.empty();
+            const ogAsset = assetFiles.find(f => f.path === (pageData.og_image_path || '').replace(/^\//, ''));
+            const previewSrc = ogAsset ? ogAsset.data : '';
+            const previewName = ogAsset ? ogAsset.name : '';
+            const editorHTML = `
+                <h3>Editing Page: ${pageId} (${lang})</h3>
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-control page-title" value="${pageData.title || ''}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-control page-description" value="${pageData.description || ''}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Keywords</label>
+                    <input type="text" class="form-control page-keywords" value="${pageData.keywords || ''}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Content</label>
+                    <textarea class="form-control page-content">${pageData.content || ''}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Page-specific CSS</label>
+                    <textarea class="form-control page-custom-css" rows="5">${pageData.custom_css || ''}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Custom Head Content</label>
+                    <textarea class="form-control page-head-content" rows="5">${pageData.head_content || ''}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">OG Image</label>
+                    <div class="input-group">
+                        <input type="file" class="form-control og-image-upload" accept="image/*">
+                        <button class="btn btn-outline-secondary clear-og-image" type="button">Clear</button>
+                    </div>
+                    <div class="og-image-preview mt-2" ${previewSrc ? '' : 'style="display:none"'} >
+                        <img src="${previewSrc}" class="img-thumbnail" style="max-height: 100px;">
+                        <span class="ms-2">${previewName}</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary save-page-btn">
+                    <i class="fas fa-save"></i> Save Page
+                </button>
+            `;
+            editorContainer.html(editorHTML);
+            editorContainer.find(".page-content").summernote({
+                height: 300,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ]
+            });
+            editorContainer.find(".save-page-btn").click(function() {
+                savePageData(lang, pageId);
+            });
+            editorContainer.find(".og-image-upload").change(function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const ext = mimeToExt[file.type];
+                if (!ext) {
+                    alert("Unsupported file type. Please upload an image (jpeg, png, gif, webp).");
+                    return;
+                }
+                const ogImagePath = `og_images/${lang}_${pageId}.${ext}`;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        pageData.og_image_path = `/${ogImagePath}`;
+                        pageData.og_image_width = this.width;
+                        pageData.og_image_height = this.height;
+                        pageData.og_image_type = file.type;
+                        const existingIndex = assetFiles.findIndex(f => f.path === ogImagePath);
+                        if (existingIndex >= 0) {
+                            assetFiles[existingIndex] = {
+                                name: `${lang}_${pageId}.${ext}`,
+                                path: ogImagePath,
+                                size: file.size,
+                                type: file.type,
+                                data: e.target.result,
+                                width: this.width,
+                                height: this.height
+                            };
+                        } else {
+                            assetFiles.push({
+                                name: `${lang}_${pageId}.${ext}`,
+                                path: ogImagePath,
+                                size: file.size,
+                                type: file.type,
+                                data: e.target.result,
+                                width: this.width,
+                                height: this.height
+                            });
+                        }
+                        editorContainer.find(".og-image-preview img").attr("src", e.target.result);
+                        editorContainer.find(".og-image-preview span").text(file.name);
+                        editorContainer.find(".og-image-preview").show();
+                        updateAssetFilesList();
+                        saveToLocalStorage();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+            editorContainer.find(".clear-og-image").click(function() {
+                delete pageData.og_image_path;
+                delete pageData.og_image_width;
+                delete pageData.og_image_height;
+                delete pageData.og_image_type;
+                editorContainer.find(".og-image-upload").val('');
+                editorContainer.find(".og-image-preview").hide();
+            });
+        }
+
+        function clearPageEditor() {
+            $("#pageContentEditor").html(`
+                <div class="text-center text-muted p-5">
+                    <i class="fas fa-file-alt fa-3x mb-3"></i>
+                    <h4>Select a page to edit its content</h4>
+                </div>
+            `);
+            currentLanguage = null;
+            currentPage = null;
+        }
+
+        function savePageData(lang, pageId) {
+            const editorContainer = $("#pageContentEditor");
+            const content = editorContainer.find(".page-content").summernote('code');
+            processExternalImages(content, function(processedContent) {
+                siteData[lang].pages[pageId].title = editorContainer.find(".page-title").val();
+                siteData[lang].pages[pageId].description = editorContainer.find(".page-description").val();
+                siteData[lang].pages[pageId].keywords = editorContainer.find(".page-keywords").val();
+                siteData[lang].pages[pageId].content = processedContent;
+                siteData[lang].pages[pageId].custom_css = editorContainer.find(".page-custom-css").val();
+                siteData[lang].pages[pageId].head_content = editorContainer.find(".page-head-content").val();
+                updateJSONEditor();
+                saveToLocalStorage();
+                const notification = $(`
+                    <div class="ස්‌ත්‍රැප්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්‌ටිජ්  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmAddPage">Add Page</button>
+    </div>
+</div>
+</div>
+</div>
+<!-- External Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- Internal JavaScript Logic -->
+<script>
+    const mimeToExt = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/gif': 'gif',
+        'image/webp': 'webp'
+    };
+    let siteData = {
+        "en": {
+            "pages": {
+                "index": {
+                    "title": "Welcome",
+                    "description": "This is the homepage in English.",
+                    "keywords": "homepage, welcome, english",
+                    "content": "<p>Welcome to the English homepage. Enjoy your visit!</p>",
+                    "custom_css": ""
+                },
+                "about": {
+                    "title": "About Us",
+                    "description": "Learn more about our project.",
+                    "keywords": "about, project, info",
+                    "content": "<p>We are dedicated to providing the best experience for our users.</p>",
+                    "custom_css": ""
+                },
+                "contact": {
+                    "title": "Contact Us",
+                    "description": "Reach out to us anytime.",
+                    "keywords": "contact, email, support",
+                    "content": "<p>Email us at <a href='mailto:support@example.com'>support@example.com</a>.</p>",
+                    "custom_css": ""
+                }
+            },
+            "header": "",
+            "footer": ""
+        },
+        "es": {
+            "pages": {
+                "index": {
+                    "title": "Bienvenido",
+                    "description": "Esta es la página de inicio en español.",
+                    "keywords": "página de inicio, bienvenido, español",
+                    "content": "<p>Bienvenido a la página de inicio en español. ¡Disfruta tu visita!</p>",
+                    "custom_css": ""
+                },
+                "about": {
+                    "title": "Sobre Nosotros",
+                    "description": "Conozca más sobre nuestro proyecto.",
+                    "keywords": "sobre, proyecto, información",
+                    "content": "<p>Estamos dedicados a proporcionar la mejor experiencia para nuestros usuarios.</p>",
+                    "custom_css": ""
+                },
+                "contact": {
+                    "title": "Contáctenos",
+                    "description": "Póngase en contacto con nosotros en cualquier momento.",
+                    "keywords": "contacto, correo electrónico, soporte",
+                    "content": "<p>Envíenos un correo a <a href='mailto:soporte@example.com'>soporte@example.com</a>.</p>",
+                    "custom_css": ""
+                }
+            },
+            "header": "",
+            "footer": ""
+        }
+    };
+    let assetFiles = [];
+    let shortcodes = {};
+    let currentLanguage = null;
+    let currentPage = null;
+
+    function saveToLocalStorage() {
+        localStorage.setItem('siteData', JSON.stringify(siteData));
+        localStorage.setItem('templateData', $("#templateEditor").val());
+        localStorage.setItem('globalCssData', $("#globalCssEditor").val());
+        localStorage.setItem('globalJsData', $("#globalJsEditor").val());
+        localStorage.setItem('domainData', $("#domainInput").val());
+        localStorage.setItem('robotsData', $("#robotsTxtEditor").val());
+        localStorage.setItem('assetFiles', JSON.stringify(assetFiles));
+        localStorage.setItem('shortcodes', JSON.stringify(shortcodes));
+    }
+
+    function loadFromLocalStorage() {
+        const savedSiteData = localStorage.getItem('siteData');
+        const savedTemplateData = localStorage.getItem('templateData');
+        const savedGlobalCssData = localStorage.getItem('globalCssData');
+        const savedGlobalJsData = localStorage.getItem('globalJsData');
+        const savedDomainData = localStorage.getItem('domainData');
+        const savedRobotsData = localStorage.getItem('robotsData');
+        const savedAssetFiles = localStorage.getItem('assetFiles');
+        const savedShortcodes = localStorage.getItem('shortcodes');
+
+        if (savedSiteData) {
+            siteData = JSON.parse(savedSiteData);
+            renderLanguageTree();
+            updatePreviewSelectors();
+            updateJSONEditor();
+        }
+        if (savedTemplateData) $("#templateEditor").val(savedTemplateData);
+        if (savedGlobalCssData) $("#globalCssEditor").val(savedGlobalCssData);
+        if (savedGlobalJsData) $("#globalJsEditor").val(savedGlobalJsData);
+        if (savedDomainData) $("#domainInput").val(savedDomainData);
+        if (savedRobotsData) $("#robotsTxtEditor").val(savedRobotsData);
+        if (savedAssetFiles) {
+            assetFiles = JSON.parse(savedAssetFiles);
+            const logoAsset = assetFiles.find(f => f.path === 'logo.png');
+            if (logoAsset) {
+                $("#logoPreview img").attr('src', logoAsset.data);
+                $("#logoPreview").show();
+            }
+            updateAssetFilesList();
+        }
+        if (savedShortcodes) {
+            shortcodes = JSON.parse(savedShortcodes);
+            updateShortcodesList();
+        }
+    }
+
+    $(document).ready(function() {
+        loadFromLocalStorage();
+        updateJSONEditor();
+        renderLanguageTree();
+        updateHeaderFooterTabs();
+        updatePreviewSelectors();
+
+        $("#addLanguage").click(function() {
+            $('#addLanguageModal').modal('show');
+        });
+
+        $("#confirmAddLanguage").click(function() {
+            const langCode = $("#newLanguageCode").val().trim();
+            if (langCode) {
+                addNewLanguage(langCode);
+                $('#addLanguageModal').modal('hide');
+                $("#newLanguageCode").val('');
+            }
+        });
+
+        $("#addPage").click(function() {
+            $('#addPageModal').modal('show');
+        });
+
+        $("#confirmAddPage").click(function() {
+            const pageId = $("#newPageId").val().trim();
+            if (pageId) {
+                addNewPage(pageId);
+                $('#addPageModal').modal('hide');
+                $("#newPageId").val('');
+            }
+        });
+
+        $("#updateFromJSON").click(function() {
+            try {
+                siteData = JSON.parse($("#jsonEditor").val());
+                renderLanguageTree();
+                updatePreviewSelectors();
+                updateJSONEditor();
+                updateHeaderFooterTabs();
+                alert("Content updated successfully from JSON!");
+                saveToLocalStorage();
+            } catch (e) {
+                alert("Error parsing JSON: " + e.message);
+            }
+        });
+
+        $("#generatePreview").click(function() {
+            generatePreview();
+        });
+
+        $("#generateFiles").click(function() {
+            generateStaticSite();
+        });
+
+        $("#saveProject").click(function() {
+            saveProject();
+        });
+
+        $("#importProject").click(function() {
+            $("#projectFileInput").click();
+        });
+
+        $("#projectFileInput").change(function(e) {
+            importProject(e);
+        });
+
+        $("#browseFilesBtn").click(function() {
+            $("#assetFileInput").click();
+        });
+
+        $("#assetFileInput").change(function(e) {
+            handleFileUpload(e);
+        });
+
+        $(".file-upload-container").on('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('bg-light');
+        });
+
+        $(".file-upload-container").on('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('bg-light');
+        });
+
+        $(".file-upload-container").on('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('bg-light');
+            const files = e.originalEvent.dataTransfer.files;
+            handleAssetFiles(files);
+        });
+
+        $("#clearData").click(function() {
+            if (confirm("क्या आप वाकई सभी स्थानीय डेटा मिटाना चाहते हैं?")) {
+                localStorage.clear();
+                alert("सभी कुकीज़ डेटा मिटा दिया गया है!");
+            }
+        });
+
+        $("#uploadLogoBtn").click(function() {
+            $("#logoFileInput").click();
+        });
+
+        $("#logoFileInput").change(function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const existingIndex = assetFiles.findIndex(f => f.path === 'logo.png');
+                    const logoData = {
+                        name: 'logo.png',
+                        path: 'logo.png',
+                        size: file.size,
+                        type: file.type,
+                        data: e.target.result,
+                        width: this.width,
+                        height: this.height
+                    };
+                    if (existingIndex >= 0) {
+                        assetFiles[existingIndex] = logoData;
+                    } else {
+                        assetFiles.push(logoData);
+                    }
+                    $("#logoPreview img").attr('src', e.target.result);
+                    $("#logoPreview").show();
+                    updateAssetFilesList();
+                    saveToLocalStorage();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        $("#addShortcode").click(function() {
+            const name = $("#shortcodeName").val().trim();
+            const content = $("#shortcodeContent").val();
+            if (name && content) {
+                shortcodes[name] = content;
+                updateShortcodesList();
+                saveToLocalStorage();
+                $("#shortcodeName").val('');
+                $("#shortcodeContent").val('');
+                alert(`Shortcode <${name}> added successfully!`);
+            } else {
+                alert("Please enter both shortcode name and content.");
+            }
+        });
+    });
+
+    function renderLanguageTree() {
+        const container = $("#languageTree");
+        container.empty();
+        Object.keys(siteData).forEach(lang => {
+            const langFolder = $(`
+                <div class="language-folder" data-lang="${lang}">
+                    <i class="fas fa-folder me-2"></i> ${lang}
+                    <div class="float-end">
+                        <button class="btn btn-sm btn-outline-danger remove-language">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="language-pages" data-lang="${lang}">
+                </div>
+            `);
+            const pagesContainer = langFolder.filter(".language-pages");
+            Object.keys(siteData[lang].pages).forEach(pageId => {
+                const pageItem = $(`
+                    <div class="page-item" data-lang="${lang}" data-page="${pageId}">
+                        <i class="fas fa-file-alt me-2"></i> ${pageId}
+                        <div class="float-end">
+                            <button class="btn btn-sm btn-outline-primary edit-page-id me-1">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger remove-page">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `);
+                pagesContainer.append(pageItem);
+            });
+            container.append(langFolder);
+        });
+
+        $(".language-folder").click(function(e) {
+            if ($(e.target).hasClass('remove-language') || $(e.target).parent().hasClass('remove-language')) return;
+            const lang = $(this).data('lang');
+            $(this).toggleClass('active');
+            $(`.language-pages[data-lang="${lang}"]`).slideToggle();
+        });
+
+        $(".remove-language").click(function(e) {
+            e.stopPropagation();
+            const lang = $(this).closest('.language-folder').data('lang');
+            if (confirm(`Are you sure you want to remove the ${lang} language?`)) {
+                delete siteData[lang];
+                renderLanguageTree();
+                updatePreviewSelectors();
+                updateJSONEditor();
+                updateHeaderFooterTabs();
+                if (currentLanguage === lang) clearPageEditor();
+                saveToLocalStorage();
+            }
+        });
+
+        $(".page-item").click(function() {
+            $(".page-item").removeClass('active');
+            $(this).addClass('active');
+            const lang = $(this).data('lang');
+            const pageId = $(this).data('page');
+            currentLanguage = lang;
+            currentPage = pageId;
+            renderPageEditor(lang, pageId);
+        });
+
+        $(".remove-page").click(function(e) {
+            e.stopPropagation();
+            const lang = $(this).closest('.page-item').data('lang');
+            const pageId = $(this).closest('.page-item').data('page');
+            if (confirm(`क्या आप वाकई ${pageId} पेज को हटाना चाहते हैं?`)) {
+                delete siteData[lang].pages[pageId];
+                renderLanguageTree();
+                updatePreviewSelectors();
+                updateJSONEditor();
+                updateHeaderFooterTabs();
+                if (currentLanguage === lang && currentPage === pageId) clearPageEditor();
+                saveToLocalStorage();
+            }
+        });
+
+        $(".edit-page-id").click(function(e) {
+            e.stopPropagation();
+            const lang = $(this).closest('.page-item').data('lang');
+            const pageId = $(this).closest('.page-item').data('page');
+            const newPageId = prompt("Enter new page ID:", pageId);
+            if (newPageId && newPageId !== pageId) {
+                if (siteData[lang].pages[newPageId]) {
+                    alert(`Page ID "${newPageId}" already exists in this language.`);
+                    return;
+                }
+                siteData[lang].pages[newPageId] = { ...siteData[lang].pages[pageId] };
+                delete siteData[lang].pages[pageId];
+                renderLanguageTree();
+                updatePreviewSelectors();
+                updateJSONEditor();
+                if ($("#previewPage").val() === pageId) $("#previewPage").val(newPageId);
+                if (currentLanguage === lang && currentPage === pageId) {
+                    currentPage = newPageId;
+                    renderPageEditor(lang, newPageId);
+                }
+                saveToLocalStorage();
+                alert(`Page ID successfully changed from "${pageId}" to "${newPageId}".`);
+            }
+        });
+    }
+
+    function renderPageEditor(lang, pageId) {
+        const pageData = siteData[lang].pages[pageId];
+        const editorContainer = $("#pageContentEditor");
+        editorContainer.empty();
+        const ogAsset = assetFiles.find(f => f.path === (pageData.og_image_path || '').replace(/^\//, ''));
+        const previewSrc = ogAsset ? ogAsset.data : '';
+        const previewName = ogAsset ? ogAsset.name : '';
+        const editorHTML = `
+            <h3>Editing Page: ${pageId} (${lang})</h3>
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-control page-title" value="${pageData.title || ''}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control page-description" value="${pageData.description || ''}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Keywords</label>
+                <input type="text" class="form-control page-keywords" value="${pageData.keywords || ''}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Content</label>
+                <textarea class="form-control page-content">${pageData.content || ''}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Page-specific CSS</label>
+                <textarea class="form-control page-custom-css" rows="5">${pageData.custom_css || ''}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Custom Head Content</label>
+                <textarea class="form-control page-head-content" rows="5">${pageData.head_content || ''}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">OG Image</label>
+                <div class="input-group">
+                    <input type="file" class="form-control og-image-upload" accept="image/*">
+                    <button class="btn btn-outline-secondary clear-og-image" type="button">Clear</button>
+                </div>
+                <div class="og-image-preview mt-2" ${previewSrc ? '' : 'style="display:none"'} >
+                    <img src="${previewSrc}" class="img-thumbnail" style="max-height: 100px;">
+                    <span class="ms-2">${previewName}</span>
+                </div>
+            </div>
+            <button class="btn btn-primary save-page-btn">
+                <i class="fas fa-save"></i> Save Page
+            </button>
+        `;
+        editorContainer.html(editorHTML);
+        editorContainer.find(".page-content").summernote({
+            height: 300,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'underline', 'clear']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+        editorContainer.find(".save-page-btn").click(function() {
+            savePageData(lang, pageId);
+        });
+        editorContainer.find(".og-image-upload").change(function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const ext = mimeToExt[file.type];
+            if (!ext) {
+                alert("Unsupported file type. Please upload an image (jpeg, png, gif, webp).");
+                return;
+            }
+            const ogImagePath = `og_images/${lang}_${pageId}.${ext}`;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    pageData.og_image_path = `/${ogImagePath}`;
+                    pageData.og_image_width = this.width;
+                    pageData.og_image_height = this.height;
+                    pageData.og_image_type = file.type;
+                    const existingIndex = assetFiles.findIndex(f => f.path === ogImagePath);
+                    if (existingIndex >= 0) {
+                        assetFiles[existingIndex] = {
+                            name: `${lang}_${pageId}.${ext}`,
+                            path: ogImagePath,
+                            size: file.size,
+                            type: file.type,
+                            data: e.target.result,
+                            width: this.width,
+                            height: this.height
+                        };
+                    } else {
+                        assetFiles.push({
+                            name: `${lang}_${pageId}.${ext}`,
+                            path: ogImagePath,
+                            size: file.size,
+                            type: file.type,
+                            data: e.target.result,
+                            width: this.width,
+                            height: this.height
+                        });
+                    }
+                    editorContainer.find(".og-image-preview img").attr("src", e.target.result);
+                    editorContainer.find(".og-image-preview span").text(file.name);
+                    editorContainer.find(".og-image-preview").show();
+                    updateAssetFilesList();
+                    saveToLocalStorage();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+        editorContainer.find(".clear-og-image").click(function() {
+            delete pageData.og_image_path;
+            delete pageData.og_image_width;
+            delete pageData.og_image_height;
+            delete pageData.og_image_type;
+            editorContainer.find(".og-image-upload").val('');
+            editorContainer.find(".og-image-preview").hide();
+        });
+    }
+
+    function clearPageEditor() {
+        $("#pageContentEditor").html(`
+            <div class="text-center text-muted p-5">
+                <i class="fas fa-file-alt fa-3x mb-3"></i>
+                <h4>Select a page to edit its content</h4>
+            </div>
+        `);
+        currentLanguage = null;
+        currentPage = null;
+    }
+
+    function savePageData(lang, pageId) {
+        const editorContainer = $("#pageContentEditor");
+        const content = editorContainer.find(".page-content").summernote('code');
+        processExternalImages(content, function(processedContent) {
+            siteData[lang].pages[pageId].title = editorContainer.find(".page-title").val();
+            siteData[lang].pages[pageId].description = editorContainer.find(".page-description").val();
+            siteData[lang].pages[pageId].keywords = editorContainer.find(".page-keywords").val();
+            siteData[lang].pages[pageId].content = processedContent;
+            siteData[lang].pages[pageId].custom_css = editorContainer.find(".page-custom-css").val();
+            siteData[lang].pages[pageId].head_content = editorContainer.find(".page-head-content").val();
+            updateJSONEditor();
+            saveToLocalStorage();
+            const notification = $(`
+                <div class="alert alert-success alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 1050;" role="alert">
+                    Page saved successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `);
+            $("body").append(notification);
+            setTimeout(() => notification.alert('close'), 3000);
+        });
+    }
+
+    function addNewLanguage(langCode) {
+        if (siteData[langCode]) {
+            alert(`Language ${langCode} already exists!`);
+            return;
+        }
+        siteData[langCode] = { "pages": {} };
+        siteData[langCode].header = "";
+        siteData[langCode].footer = "";
+        const sourceLanguage = siteData.en ? 'en' : Object.keys(siteData)[0];
+        if (sourceLanguage) {
+            const sourcePages = siteData[sourceLanguage].pages;
+            Object.keys(sourcePages).forEach(pageId => {
+                siteData[langCode].pages[pageId] = {
+                    "title": "New Title",
+                    "description": "New Description",
+                    "keywords": "keyword1, keyword2",
+                    "content": "<p>New Content</p>",
+                    "custom_css": ""
+                };
+            });
+        }
+        renderLanguageTree();
+        updatePreviewSelectors();
+        updateJSONEditor();
+        updateHeaderFooterTabs();
+        saveToLocalStorage();
+    }
+
+    function addNewPage(pageId) {
+        if (Object.keys(siteData).length === 0) {
+            alert("Please add at least one language first!");
+            return;
+        }
+        let pageExists = false;
+        Object.keys(siteData).forEach(lang => {
+            if (siteData[lang].pages[pageId]) pageExists = true;
+        });
+        if (pageExists) {
+            alert(`Page ${pageId} already exists in at least one language!`);
+            return;
+        }
+        Object.keys(siteData).forEach(lang => {
+            siteData[lang].pages[pageId] = {
+                "title": "New Title",
+                "description": "New Description",
+                "keywords": "keyword1, keyword2",
+                "content": "<p>New Content</p>",
+                "custom_css": ""
+            };
+        });
+        renderLanguageTree();
+        updatePreviewSelectors();
+        updateJSONEditor();
+        saveToLocalStorage();
+    }
+
+    function updateJSONEditor() {
+        $("#jsonEditor").val(JSON.stringify(siteData, null, 4));
+    }
+
+    function updatePreviewSelectors() {
+        const langSelect = $("#previewLanguage");
+        const pageSelect = $("#previewPage");
+        langSelect.empty();
+        pageSelect.empty();
+        Object.keys(siteData).forEach(lang => {
+            langSelect.append(`<option value="${lang}">${lang}</option>`);
+        });
+        const firstLang = Object.keys(siteData)[0];
+        if (firstLang) {
+            Object.keys(siteData[firstLang].pages).forEach(pageId => {
+                pageSelect.append(`<option value="${pageId}">${pageId}</option>`);
+            });
+        }
+    }
+
+    function generateHreflangTags(currentLang, pageId, domain) {
+        let tags = [];
+        Object.keys(siteData).forEach(lang => {
+            if (!siteData[lang].pages[pageId]) return;
+            const langPath = lang === "en" ? "" : `${lang}/`;
+            const pagePath = pageId === "index" ? "" : pageId;
+            const url = `${domain}/${langPath}${pagePath}`;
+            tags.push(`<link rel="alternate" hreflang="${lang}" href="${url}">`);
+        });
+        if (siteData.en && siteData.en.pages[pageId]) {
+            tags.push(`<link rel="alternate" hreflang="x-default" href="${domain}/${pageId === "index" ? "" : pageId}">`);
+        } else {
+            const firstLang = Object.keys(siteData).find(lang => siteData[lang].pages[pageId]);
+            if (firstLang) {
+                const langPath = firstLang === "en" ? "" : `${firstLang}/`;
+                tags.push(`<link rel="alternate" hreflang="x-default" href="${domain}/${langPath}${pageId === "index" ? "" : pageId}">`);
+            }
+        }
+        return tags.join("\n");
+    }
+
+    function processShortcodes(content) {
+        let processedContent = content;
+        Object.keys(shortcodes).forEach(name => {
+            const regex = new RegExp(`<${name}>`, 'g');
+            processedContent = processedContent.replace(regex, shortcodes[name]);
+        });
+        return processedContent;
+    }
+
+    function updateShortcodesList() {
+        const container = $("#shortcodesList");
+        container.empty();
+        Object.keys(shortcodes).forEach(name => {
+            container.append(`
+    <div class="list-group-item">
+        <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1 fw-bold"><${name}></h5>
+            <button class="btn btn-sm btn-danger remove-shortcode" data-name="${name}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <p class="mb-1 text-muted">${shortcodes[name].substring(0, 50)}${shortcodes[name].length > 50 ? '...' : ''}</p>
+    </div>
+`);
+        });
+        $(".remove-shortcode").click(function() {
+            const name = $(this).data('name');
+            if (confirm(`Are you sure you want to remove shortcode <${name}>?`)) {
+                delete shortcodes[name];
+                updateShortcodesList();
+                saveToLocalStorage();
+            }
+        });
+    }
+
+    function updateHeaderFooterTabs() {
+        const tabsContainer = $("#headerFooterTabs");
+        const contentContainer = $("#headerFooterContent");
+        tabsContainer.empty();
+        contentContainer.empty();
+        Object.keys(siteData).forEach((lang, index) => {
+            tabsContainer.append(`
+                <button class="nav-link ${index === 0 ? 'active' : ''}" 
+                    id="nav-${lang}-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#nav-${lang}" 
+                    type="button" 
+                    role="tab">${lang}</button>
+            `);
+            contentContainer.append(`
+                <div class="tab-pane fade ${index === 0 ? 'show active' : ''}" 
+                    id="nav-${lang}" 
+                    role="tabpanel">
+                    <div class="mb-3">
+                        <label class="form-label">Header (${lang})</label>
+                        <textarea class="form-control lang-header" 
+                            data-lang="${lang}" 
+                            rows="5">${siteData[lang].header || ''}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Footer (${lang})</label>
+                        <textarea class="form-control lang-footer" 
+                            data-lang="${lang}" 
+                            rows="5">${siteData[lang].footer || ''}</textarea>
+                    </div>
+                    <button class="btn btn-primary save-header-footer" 
+                        data-lang="${lang}">Save</button>
+                </div>
+            `);
+        });
+        $(".save-header-footer").click(function() {
+            const lang = $(this).data('lang');
+            siteData[lang].header = $(`.lang-header[data-lang="${lang}"]`).val();
+            siteData[lang].footer = $(`.lang-footer[data-lang="${lang}"]`).val();
+            saveToLocalStorage();
+            alert(`Header and footer for ${lang} saved!`);
+        });
+    }
+
+    function processExternalImages(html, callback) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const images = doc.querySelectorAll('img');
+        let imagesToProcess = images.length;
+        if (imagesToProcess === 0) {
+            callback(html);
+            return;
+        }
+        images.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src && src.startsWith('http')) {
+                const urlParts = src.split('/');
+                const filename = urlParts[urlParts.length - 1];
+                let folderPath = '';
+                if (urlParts.length > 4) {
+                    const folderName = urlParts[urlParts.length - 2];
+                    folderPath = `image/${folderName}/`;
+                }
+                fetch(src, { mode: 'cors' })
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const finalPath = folderPath + filename;
+                            const existingIndex = assetFiles.findIndex(f => f.path === finalPath);
+                            if (existingIndex >= 0) {
+                                assetFiles.splice(existingIndex, 1);
+                            }
+                            assetFiles.push({
+                                name: filename,
+                                path: finalPath,
+                                size: blob.size,
+                                type: blob.type,
+                                data: e.target.result
+                            });
+                            img.setAttribute('src', '/' + finalPath);
+                            imagesToProcess--;
+                            if (imagesToProcess === 0) {
+                                updateAssetFilesList();
+                                saveToLocalStorage();
+                                callback(doc.body.innerHTML);
+                            }
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(error => {
+                        console.error(`Failed to fetch ${src}:`, error);
+                        imagesToProcess--;
+                        if (imagesToProcess === 0) callback(doc.body.innerHTML);
+                    });
+            } else {
+                imagesToProcess--;
+                if (imagesToProcess === 0) callback(doc.body.innerHTML);
+            }
+        });
+    }
+
+    function generatePreview() {
+        const lang = $("#previewLanguage").val();
+        const pageId = $("#previewPage").val();
+        if (!lang || !pageId) {
+            alert("Please select both language and page to preview.");
+            return;
+        }
+        const pageData = siteData[lang].pages[pageId];
+        const template = $("#templateEditor").val();
+        const domain = $("#domainInput").val();
+        const globalCss = $("#globalCssEditor").val();
+        const globalJs = $("#globalJsEditor").val();
+        const cssBlob = new Blob([globalCss], { type: 'text/css' });
+        const cssUrl = URL.createObjectURL(cssBlob);
+        const jsBlob = new Blob([globalJs], { type: 'text/javascript' });
+        const jsUrl = URL.createObjectURL(jsBlob);
+        const assetUrls = {};
+        assetFiles.forEach(file => {
+            assetUrls[file.path] = file.data;  // data URL
+        });
+        let processedContent = pageData.content.replace(/{(\w+)}/g, (_, key) => pageData[key] || '');
+        processedContent = processShortcodes(processedContent);
+        processedContent = processedContent
+            .replace(/href=['"]([^'"]+)\.html['"]/g, (match, link) => {
+                const targetPage = link.replace(/^\//, '').replace(/\/$/, '');
+                return `href="javascript:previewPage('${lang}', '${targetPage}')"`; 
+            })
+            .replace(/href=['"](\w+)\/([^'"]+)['"]/g, (match, linkLang, linkPage) => {
+                if (siteData[linkLang] && siteData[linkLang].pages[linkPage.replace('.html', '')]) {
+                    return `href="javascript:previewPage('${linkLang}', '${linkPage.replace('.html', '')}')"`; 
+                }
+                return match;
+            });
+        const canonical = `${domain}/${lang === "en" ? "" : `${lang}/`}${pageId === "index" ? "" : pageId}`;
+        let hreflangTags = "";
+        if (Object.keys(siteData).length > 1) {
+            hreflangTags = generateHreflangTags(lang, pageId, domain);
+        }
+        const pageStyle = pageData.custom_css ? `<style>\n${pageData.custom_css}\n</style>` : '';
+        const siteName = domain.replace(/^https?:\/\//, '').replace(/\.[^.]+$/, '');
+        let html = template
+            .replace(/href=['"]\/css\/style\.css['"]/g, `href="${cssUrl}"`)
+            .replace(/src=['"]\/js\/global\.js['"]/g, `src="${jsUrl}"`)
+            .replace(/{lang}/g, lang)
+            .replace(/{title}/g, pageData.title)
+            .replace(/{description}/g, pageData.description)
+            .replace(/{keywords}/g, pageData.keywords || '')
+            .replace(/{content}/g, processedContent)
+            .replace(/{canonical}/g, canonical)
+            .replace(/{hreflangTags}/g, hreflangTags)
+            .replace(/{pageStyle}/g, pageStyle)
+            .replace(/{siteName}/g, siteName)
+            .replace(/{headContent}/g, pageData.head_content || '')
+            .replace(/{header}/g, siteData[lang].header || '')
+            .replace(/{footer}/g, siteData[lang].footer || '');
+        Object.keys(assetUrls).forEach(path => {
+            html = html.replace(new RegExp(`(src|href)=['"]/${path}['"]`, 'g'), `$1="${assetUrls[path]}"`);
+        });
+        let ogImage = '';
+        let ogImageWidth = '';
+        let ogImageHeight = '';
+        let ogImageType = '';
+        if (pageData.og_image_path) {
+            const path = pageData.og_image_path.replace(/^\//, '');
+            const ogAsset = assetFiles.find(f => f.path === path);
+            if (ogAsset) {
+                ogImage = assetUrls[path] || '';
+                ogImageWidth = pageData.og_image_width || '';
+                ogImageHeight = pageData.og_image_height || '';
+                ogImageType = pageData.og_image_type || '';
+            }
+        } else {
+            const logoAsset = assetFiles.find(f => f.path === 'logo.png');
+            if (logoAsset) {
+                ogImage = assetUrls['logo.png'] || '';
+                ogImageWidth = logoAsset.width || '';
+                ogImageHeight = logoAsset.height || '';
+                ogImageType = logoAsset.type || '';
+            }
+        }
+        html = html
+            .replace(/{ogImage}/g, ogImage)
+            .replace(/{ogImageWidth}/g, ogImageWidth)
+            .replace(/{ogImageHeight}/g, ogImageHeight)
+            .replace(/{ogImageType}/g, ogImageType);
+        const iframe = document.getElementById('previewFrame');
+        const previewScript = `
+        <script>
+        function previewPage(lang, pageId) {
+            window.parent.previewPage(lang, pageId);
+        }
+        </` + `script>`;
+        iframe.srcdoc = html + previewScript;
+    }
+
+    function previewPage(lang, pageId) {
+        $("#previewLanguage").val(lang);
+        $("#previewPage").val(pageId);
+        generatePreview();
+    }
+
+    async function generateStaticSite() {
+        $("#generationStatus").text("Generating files...").removeClass("alert-success alert-danger").addClass("alert-info").show();
+        try {
+            const zip = new JSZip();
+            const domain = $("#domainInput").val();
+            const template = $("#templateEditor").val();
+            const globalCss = $("#globalCssEditor").val();
+            const globalJs = $("#globalJsEditor").val();
+
+            zip.folder("css");
+            zip.folder("js");
+            zip.file("css/style.css", globalCss);
+            zip.file("js/global.js", globalJs);
+
+            const allPages = {};
+            Object.keys(siteData).forEach(lang => {
+                const langData = siteData[lang].pages;
+                if (lang !== "en") zip.folder(lang);
+                Object.keys(langData).forEach(page => {
+                    const content = langData[page];
+                    if (!allPages[lang]) allPages[lang] = [];
+                    allPages[lang].push(page);
+                    let processedContent = content.content.replace(/{(\w+)}/g, (_, key) => content[key] || '');
+                    processedContent = processShortcodes(processedContent);
+                    const canonical = `${domain}/${lang === "en" ? "" : `${lang}/`}${page === "index" ? "" : page}`;
+                    let hreflangTags = "";
+                    if (Object.keys(siteData).length > 1) {
+                        hreflangTags = generateHreflangTags(lang, page, domain);
+                    }
+                    const pageStyle = content.custom_css ? `<style>\n${content.custom_css}\n</style>` : '';
+                    const siteName = domain.replace(/^https?:\/\//, '').replace(/\.[^.]+$/, '');
+                    let html = template
+                        .replace(/{lang}/g, lang)
+                        .replace(/{title}/g, content.title)
+                        .replace(/{description}/g, content.description)
+                        .replace(/{keywords}/g, content.keywords || '')
+                        .replace(/{content}/g, processedContent)
+                        .replace(/{canonical}/g, canonical)
+                        .replace(/{hreflangTags}/g, hreflangTags)
+                        .replace(/{pageStyle}/g, pageStyle)
+                        .replace(/{siteName}/g, siteName)
+                        .replace(/{headContent}/g, content.head_content || '')
+                        .replace(/{header}/g, siteData[lang].header || '')
+                        .replace(/{footer}/g, siteData[lang].footer || '');
+
+                    let ogImage = '';
+                    let ogImageWidth = '';
+                    let ogImageHeight = '';
+                    let ogImageType = '';
+                    if (content.og_image_path) {
+                        ogImage = `${domain}${content.og_image_path}`;
+                        ogImageWidth = content.og_image_width || '';
+                        ogImageHeight = content.og_image_height || '';
+                        ogImageType = content.og_image_type || '';
+                    } else {
+                        ogImage = `${domain}/logo.png`;
+                        const logoAsset = assetFiles.find(f => f.path === 'logo.png');
+                        if (logoAsset) {
+                            ogImageWidth = logoAsset.width || '';
+                            ogImageHeight = logoAsset.height || '';
+                            ogImageType = logoAsset.type || '';
+                        }
+                    }
+                    html = html
+                        .replace(/{ogImage}/g, ogImage)
+                        .replace(/{ogImageWidth}/g, ogImageWidth)
+                        .replace(/{ogImageHeight}/g, ogImageHeight)
+                        .replace(/{ogImageType}/g, ogImageType);
+
+                    const folderName = lang === "en" ? "" : `${lang}/`;
+                    const fileName = page === "index" ? "index.html" : `${page}.html`;
+                    zip.file(`${folderName}${fileName}`, html);
+                });
+            });
+
+            if ($("#generateSitemapXml").is(":checked")) {
+                let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+                sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
+                const pageLanguages = {};
+                Object.keys(siteData).forEach(lang => {
+                    Object.keys(siteData[lang].pages).forEach(pageId => {
+                        if (!pageLanguages[pageId]) pageLanguages[pageId] = [];
+                        if (!pageLanguages[pageId].includes(lang)) pageLanguages[pageId].push(lang);
+                    });
+                });
+                Object.keys(siteData).forEach(lang => {
+                    Object.keys(siteData[lang].pages).forEach(pageId => {
+                        const folderName = lang === "en" ? "" : `${lang}/`;
+                        const pagePath = pageId === "index" ? "" : pageId;
+                        const url = `${domain}/${folderName}${pagePath}`;
+                        sitemap += '  <url>\n';
+                        sitemap += `    <loc>${url}</loc>\n`;
+                        pageLanguages[pageId].forEach(altLang => {
+                            const altFolderName = altLang === "en" ? "" : `${altLang}/`;
+                            const altUrl = `${domain}/${altFolderName}${pagePath}`;
+                            sitemap += `    <xhtml:link rel="alternate" hreflang="${altLang}" href="${altUrl}"/>\n`;
+                        });
+                        if (pageLanguages[pageId].includes("en")) {
+                            const defaultUrl = `${domain}/${pageId === "index" ? "" : pageId}`;
+                            sitemap += `    <xhtml:link rel="alternate" hreflang="x-default" href="${defaultUrl}"/>\n`;
+                        } else {
+                            const firstLang = pageLanguages[pageId][0];
+                            const firstFolderName = firstLang === "en" ? "" : `${firstLang}/`;
+                            const defaultUrl = `${domain}/${firstFolderName}${pagePath}`;
+                            sitemap += `    <xhtml:link rel="alternate" hreflang="x-default" href="${defaultUrl}"/>\n`;
+                        }
+                        sitemap += '    <changefreq>weekly</changefreq>\n';
+                        sitemap += '    <priority>0.8</priority>\n';
+                        sitemap += '  </url>\n';
+                    });
+                });
+                sitemap += '</urlset>';
+                zip.file("sitemap.xml", sitemap);
+            }
+
+            if ($("#generateRobotsTxt").is(":checked")) {
+                zip.file("robots.txt", $("#robotsTxtEditor").val());
+            }
+
+            assetFiles.forEach(file => {
+                const blob = dataURLtoBlob(file.data);
+                zip.file(file.path, blob);
+            });
+
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            const url = URL.createObjectURL(zipBlob);
+            $("#downloadZip").attr("href", url);
+            $("#downloadZip").show();
+            $("#generationStatus").text("Files generated successfully! Click 'Download Zip File' to save.").removeClass("alert-info").addClass("alert-success");
+        } catch (error) {
+            console.error("Generation error:", error);
+            $("#generationStatus").text("Error generating files: " + error.message).removeClass("alert-info").addClass("alert-danger");
+        }
+    }
+
+    function saveProject() {
+        const processedAssetFiles = assetFiles.map(file => {
+            return {
+                name: file.name,
+                path: file.path,
+                size: file.size,
+                type: file.type,
+                data: file.data,
+                width: file.width,
+                height: file.height
+            };
+        });
+        const projectData = {
+            siteData: siteData,
+            template: $("#templateEditor").val(),
+            globalCss: $("#globalCssEditor").val(),
+            globalJs: $("#globalJsEditor").val(),
+            domain: $("#domainInput").val(),
+            robots: $("#robotsTxtEditor").val(),
+            assetFiles: processedAssetFiles,
+            shortcodes: shortcodes
+        };
+        const projectBlob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(projectBlob);
+        downloadLink.download = "site_project.json";
+        downloadLink.click();
+    }
+
+    function importProject(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const projectData = JSON.parse(e.target.result);
+                siteData = projectData.siteData || siteData;
+                $("#templateEditor").val(projectData.template || $("#templateEditor").val());
+                $("#globalCssEditor").val(projectData.globalCss || $("#globalCssEditor").val());
+                $("#globalJsEditor").val(projectData.globalJs || $("#globalJsEditor").val());
+                $("#domainInput").val(projectData.domain || $("#domainInput").val());
+                $("#robotsTxtEditor").val(projectData.robots || $("#robotsTxtEditor").val());
+                if (projectData.assetFiles && Array.isArray(projectData.assetFiles)) {
+                    assetFiles = projectData.assetFiles;
+                    const logoAsset = assetFiles.find(f => f.path === 'logo.png');
+                    if (logoAsset) {
+                        $("#logoPreview img").attr('src', logoAsset.data);
+                        $("#logoPreview").show();
+                    }
+                    updateAssetFilesList();
+                }
+                if (projectData.shortcodes) {
+                    shortcodes = projectData.shortcodes;
+                    updateShortcodesList();
+                }
+                renderLanguageTree();
+                updatePreviewSelectors();
+                updateJSONEditor();
+                updateHeaderFooterTabs();
+                saveToLocalStorage();
+                alert("Project imported successfully!");
+            } catch (error) {
+                alert("Error importing project: " + error.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function handleFileUpload(event) {
+        const files = event.target.files;
+        handleAssetFiles(files);
+    }
+
+    function handleAssetFiles(files) {
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                assetFiles.push({
+                    name: file.name,
+                    path: file.name,
+                    size: file.size,
+                    type: file.type,
+                    data: e.target.result  // now a data URL
+                });
+                updateAssetFilesList();
+                saveToLocalStorage();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function updateAssetFilesList() {
+        const container = $("#assetFilesList");
+        container.empty();
+        assetFiles.forEach((file, index) => {
+            container.append(`
+                <tr>
+                    <td>${file.name}</td>
+                    <td>${file.path}</td>
+                    <td>${formatFileSize(file.size)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-asset-path me-1" data-index="${index}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger remove-asset" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+        });
+        $(".edit-asset-path").click(function() {
+            const index = $(this).data('index');
+            const file = assetFiles[index];
+            const newPath = prompt("Enter new path for the file:", file.path);
+            if (newPath && newPath !== file.path) {
+                if (assetFiles.some(f => f.path === newPath)) {
+                    alert(`Path "${newPath}" already exists. Please choose a different path.`);
+                    return;
+                }
+                file.path = newPath;
+                updateAssetFilesList();
+                saveToLocalStorage();
+            }
+        });
+        $(".remove-asset").click(function() {
+            const index = $(this).data('index');
+            if (confirm(`Are you sure you want to delete ${assetFiles[index].name}?`)) {
+                assetFiles.splice(index, 1);
+                updateAssetFilesList();
+                saveToLocalStorage();
+            }
+        });
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + " bytes";
+        else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + " KB";
+        else return (bytes / 1048576).toFixed(2) + " MB";
+    }
+
+    function dataURLtoBlob(dataURL) {
+        const parts = dataURL.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const byteString = atob(parts[1]);
+        const arrayBuffer = new ArrayBuffer(byteString.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+        for (let i = 0; i < byteString.length; i++) {
+            uint8Array[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([arrayBuffer], { type: contentType });
+    }
+</script>
+</body>
+</html>
